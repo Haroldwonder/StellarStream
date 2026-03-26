@@ -32,6 +32,7 @@ import { startWebhookWorker } from "./webhook-dispatcher.worker.js";
 import { bigintSerializer } from "./middleware/bigintSerializer.js";
 import { swaggerSpec } from "./swagger.js";
 import { initializeSchedulers } from "./schedulers.js";
+import { GovernanceEventWatcher } from "./services/governance-event-watcher.service.js";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -56,6 +57,7 @@ export const ttlMonitor = new TTLArchivalMonitorService(wsService);
 const cleanupWorker = new StaleStreamCleanupWorker();
 const dataIntegrityWorker = new DataIntegrityWorker();
 const yieldAccrualWorker = new YieldAccrualWorker();
+const governanceWatcher = new GovernanceEventWatcher();
 
 // ── Security middleware ────────────────────────────────────────────────────────
 app.use(
@@ -176,6 +178,7 @@ async function start(): Promise<void> {
   // Start background services
   bridgeObserver.start();
   ttlMonitor.start();
+  governanceWatcher.start();
 
   server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
@@ -193,6 +196,7 @@ function shutdown(signal: string): void {
   yieldAccrualWorker.stop();
   bridgeObserver.stop();
   ttlMonitor.stop();
+  governanceWatcher.stop();
   closeRedis()
     .then(() => prisma.$disconnect())
     .then(() => {

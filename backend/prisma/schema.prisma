@@ -225,6 +225,26 @@ enum StreamStatus {
   ARCHIVED // V1 stream successfully migrated to V2 — hidden from active UI
 }
 
+// DAO treasury split disbursements — tracked by the governance event watcher
+model Disbursement {
+  id         String   @id @default(cuid())
+  splitId    BigInt   // On-chain split ID from initiate_treasury_split
+  initiator  String
+  token      String
+  recipients String   // JSON array of recipient addresses
+  amounts    String   // JSON array of amounts (as strings)
+  unlockTime BigInt   // Unix timestamp when the split becomes executable
+  status     String   @default("PENDING") // PENDING | EXECUTED | CANCELLED_BY_GOVERNANCE
+  txHash     String?
+  ledger     Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([splitId])
+  @@index([initiator])
+}
+
 // API keys for 3rd-party partner dApps with elevated rate limits
 model ApiKey {
   id          String    @id @default(cuid())
